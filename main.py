@@ -13,7 +13,7 @@ DELETE /:airline/:flight_num
 
 import json
 
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 
 from models import Airline, Flight
 
@@ -37,20 +37,53 @@ async def get_airline_names() -> list[str]:
 
 @app.get("/{airline_name}")
 async def get_flight_nums(airline_name: str) -> list[str]:
-    pass
+    for airline in airlines:
+        if airline.airline_name == airline_name:
+            return [flight.flight_num for flight in airline.flights]
 
 @app.get("/{airline_name}/{flight_num}")
 async def get_flights(airline_name: str, flight_num: str) -> Flight:
-    pass
+    for airline in airlines:
+        if airline.airline_name == airline_name:
+            for flight in airline.flights:
+                if flight.flight_num == flight_num:
+                    return flight
 
 @app.post("/{airline_name}")
-async def create_airline(airline: Airline) -> None:
-    pass
+async def create_airline(airline_name: str) -> Airline:
+    new_airline = Airline(airline_name=airline_name, flights=[])
+    airlines.append(new_airline)
+    return new_airline
 
 @app.put("/{airline_name}/{flight_num}")
-async def update_flights(airline_name: str, flight_num: str, updated_flight: Flight) -> None:
-    pass
-        
+async def update_flight(airline_name: str, flight_num: str, updated_flight: Flight) -> None:
+    for airline in airlines:
+        if airline.airline_name == airline_name:
+            for flight in airline.flights:
+                if flight.flight_num == flight_num:
+                    flight.capacity = updated_flight.capacity
+                    flight.estimated_flight_duration = updated_flight.estimated_flight_duration
+                    return
+                
+
 @app.delete("/{airline_name}/{flight_num}")
-async def delete_flights(airline_name: str, flight_num: str) -> None:
-    pass
+async def delete_flight(airline_name: str, flight_num: str):
+    for airline in airlines:
+        if airline.airline_name == airline_name:
+            for flight in airline.flights:
+                if flight.flight_num == flight_num:
+                    airline.flights.remove(flight)
+                    return {"message": "Flight deleted successfully"}
+    raise HTTPException(status_code=404, detail="Flight not found")
+
+
+@app.put("/{airline_name}/{flight_num}")
+async def put_flight(airline_name: str, flight_num: str, flight: Flight) -> Flight:
+    for airline in airlines:
+        if airline.airline_name == airline_name:
+            for flight in airline.flights:
+                if flight.flight_num == flight_num:
+                    flight.capacity = flight.capacity
+                    flight.estimated_flight_duration = flight.estimated_flight_duration
+                    return flight
+    raise HTTPException(status_code=404, detail="Flight not found")
