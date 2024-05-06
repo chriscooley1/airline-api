@@ -56,15 +56,18 @@ async def create_airline(airline_name: str) -> Airline:
     return new_airline
 
 @app.put("/{airline_name}/{flight_num}")
-async def update_flight(airline_name: str, flight_num: str, updated_flight: Flight) -> None:
+async def update_flight(airline_name: str, flight_num: str, updated_flight: Flight):
     for airline in airlines:
         if airline.airline_name == airline_name:
             for flight in airline.flights:
                 if flight.flight_num == flight_num:
                     flight.capacity = updated_flight.capacity
                     flight.estimated_flight_duration = updated_flight.estimated_flight_duration
-                    return
-                
+                    return "Flight updated successfully"
+            # If the flight doesn't exist, add it
+            airline.flights.append(updated_flight)
+            return "Flight created successfully"
+    raise HTTPException(status_code=404, detail="Airline not found")
 
 @app.delete("/{airline_name}/{flight_num}")
 async def delete_flight(airline_name: str, flight_num: str):
@@ -74,16 +77,4 @@ async def delete_flight(airline_name: str, flight_num: str):
                 if flight.flight_num == flight_num:
                     airline.flights.remove(flight)
                     return {"message": "Flight deleted successfully"}
-    raise HTTPException(status_code=404, detail="Flight not found")
-
-
-@app.put("/{airline_name}/{flight_num}")
-async def put_flight(airline_name: str, flight_num: str, flight: Flight) -> Flight:
-    for airline in airlines:
-        if airline.airline_name == airline_name:
-            for flight in airline.flights:
-                if flight.flight_num == flight_num:
-                    flight.capacity = flight.capacity
-                    flight.estimated_flight_duration = flight.estimated_flight_duration
-                    return flight
     raise HTTPException(status_code=404, detail="Flight not found")
